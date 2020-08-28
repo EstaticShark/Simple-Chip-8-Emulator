@@ -15,7 +15,7 @@ class chip8 {
 		unsigned char  delay_timer;				// Delay timer
 		unsigned char  sound_timer;				// Sound timer
 
-		unsigned char  V[REGISTER_SIZE];		// Registers (V0-VF)
+		unsigned char  registers[REGISTER_SIZE];// Registers (V0-VF). The VF register contains the carry bit
 		unsigned short stack[STACK_SIZE];		// Stack (16 levels)
 		unsigned char  memory[MEMORY_SIZE];		// Memory (4 KiB)		
 
