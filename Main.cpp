@@ -5,12 +5,14 @@
 #include <string>
 #include "chip8.h"
 
+//Imports for sound
 #include <Mmsystem.h>
 #include <mciapi.h>
 #pragma comment(lib, "Winmm.lib")
 
 using namespace std;
 
+//Color for the emulator
 #define RED 184
 #define BLUE 233
 #define GREEN 184
@@ -18,13 +20,13 @@ using namespace std;
 //Keyboard mapping
 int read_keys(const Uint8 *keystate);
 
-
+//The chip8 emulator
 chip8 emulator;
 
 int main(int argc, char * argv[]) {
 
 	//Initialize SDL
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) { //Initialize SDL
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) { 
 		printf("SDL_Init failed to intialize.\n");
 		return 1;
 	}
@@ -56,17 +58,18 @@ int main(int argc, char * argv[]) {
 	//Initialize the keyboard
 	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 
-	printf("SDL setup complete\n");
-
-	//Get and load game
+	//Get the path to the game
 	char game_file[20];
 	printf("Enter the game's name\n");
 	cin >> game_file;
+
+	//Try and load the game
 	if (emulator.load(game_file)) {
 		printf("Closing program\n");
 		SDL_DestroyRenderer(renderer);
 		SDL_DestroyWindow(window);
 		SDL_Quit();
+		return 1;
 	}
 
 	//Main game loop
@@ -142,10 +145,13 @@ int read_keys(const Uint8 *keystate) {
 
 	SDL_PumpEvents();
 
+	//Check for exit key (ESC)
 	if (keystate[SDL_SCANCODE_ESCAPE]) return 1;
 
+	//Clear inputs
 	for (int i = 0; i < 16; i++) emulator.key_state[i] = 0;
 
+	//Read keys
 	if (keystate[SDL_SCANCODE_1]) emulator.key_state[0x1] = 1;
 	if (keystate[SDL_SCANCODE_2]) emulator.key_state[0x2] = 1;
 	if (keystate[SDL_SCANCODE_3]) emulator.key_state[0x3] = 1;
@@ -165,16 +171,6 @@ int read_keys(const Uint8 *keystate) {
 	if (keystate[SDL_SCANCODE_X]) emulator.key_state[0x0] = 1;
 	if (keystate[SDL_SCANCODE_C]) emulator.key_state[0xB] = 1;
 	if (keystate[SDL_SCANCODE_V]) emulator.key_state[0xF] = 1;
-
-
-	// For debugging
-	/*
-	for (int j = 0; j < 16; j++) {
-		if (emulator.key_state[j]) {
-			printf("Key %d pressed\n", j);
-		}
-	}
-	*/
 
 	return 0;
 }

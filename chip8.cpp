@@ -27,9 +27,10 @@ unsigned char chip8_fontset[FONT_SET_SIZE] =
 
 char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
+/*
+	For debugging. Prints out an unsigned short in hexadecimal format
+*/
 void print_opcode(unsigned short opcode) {
-	//char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-
 	printf("0x");
 	printf("%c", hex[((opcode >> 12) & 0xF)]);
 	printf("%c", hex[((opcode >> 8) & 0xF)]);
@@ -38,6 +39,9 @@ void print_opcode(unsigned short opcode) {
 	printf("\n");
 }
 
+/*
+	Initialization method
+*/
 void chip8::init() {
 	pc = 0x200;
 	opcode = 0;
@@ -45,36 +49,36 @@ void chip8::init() {
 	sp = 0;
 	sound = 0;
 	draw = 0;
-	printf("Flags Set\n");
 
 	delay_timer = 0;
 	sound_timer = 0;
-	printf("Timers set\n");
 
 	memset(registers, 0, REGISTER_SIZE);
 	memset(stack, 0, STACK_SIZE);
 	memset(memory, 0, MEMORY_SIZE);
 	memset(window_state, 0, WINDOW_WIDTH * WINDOW_HEIGHT);
 	memset(key_state, 0, 16);
-	printf("Arrays set\n");
 
 	memcpy(&memory[FONT_OFFSET], chip8_fontset, FONT_SET_SIZE); // Store the fontset at the start of the memory
-
 	printf("Chip 8 Initialized\n");
 }
 
+
+/*
+	Run one cycle of the emulator
+*/
 void chip8::cycle()
 {
-	// Opcodes are two bytes large, and so the program counter holds opcodes in two indexes
+	//Opcodes are two bytes large, and so the program counter holds opcodes in two indexes
 	opcode = memory[pc] << 8 | memory[pc + 1];
 
-	// Check the first 4 bits of program counter (big-endian) and act accordingly
+	//Check the first 4 bits of program counter (big-endian) and act accordingly
 	switch (opcode & 0xF000) {
 		case 0x0000: // 0x00NN
 		{
 			switch (opcode & 0x00FF) {
 
-				case 0x0E0: // Clear the screen
+				case 0x0E0: //Clear the screen
 				{
 					memset(window_state, 0, WINDOW_WIDTH * WINDOW_HEIGHT);
 					draw = 1;
@@ -82,7 +86,7 @@ void chip8::cycle()
 				}
 				break;
 
-				case 0x0EE: // Return from a subroutine
+				case 0x0EE: //Return from a subroutine
 				{
 					//stack[sp] = 0;
 					sp--;
@@ -159,8 +163,8 @@ void chip8::cycle()
 
 		case 0x8000: // 0x8XY0
 		{
-			switch (opcode & 0xF) {
-				case 0x0: // Vx=Vy
+			switch (opcode & 0x000F) {
+				case 0x0000: // Vx=Vy
 				{
 					registers[(opcode & 0x0F00) >> 8] = registers[(opcode & 0x00F0) >> 4];
 					pc += 2;
@@ -168,7 +172,7 @@ void chip8::cycle()
 				break;
 
 
-				case 0x1: // Vx=Vx|Vy
+				case 0x0001: // Vx=Vx|Vy
 				{
 					registers[(opcode & 0x0F00) >> 8] |= registers[(opcode & 0x00F0) >> 4];
 					pc += 2;
@@ -176,7 +180,7 @@ void chip8::cycle()
 				break;
 
 
-				case 0x2: // Vx=Vx&Vy
+				case 0x0002: // Vx=Vx&Vy
 				{
 					registers[(opcode & 0x0F00) >> 8] &= registers[(opcode & 0x00F0) >> 4];
 					pc += 2;
@@ -184,7 +188,7 @@ void chip8::cycle()
 				break;
 
 
-				case 0x3: // Vx=Vx^Vy
+				case 0x0003: // Vx=Vx^Vy
 				{
 					registers[(opcode & 0x0F00) >> 8] ^= registers[(opcode & 0x00F0) >> 4];
 					pc += 2;
@@ -192,10 +196,10 @@ void chip8::cycle()
 				break;
 
 
-				case 0x4: // Vx += Vy, VF = 1 when there is carry
+				case 0x0004: // Vx += Vy, VF = 1 when there is carry
 				{
-					if (registers[(opcode & 0x0F00) >> 8] + registers[(opcode & 0x00F0) >> 4] > 0x00FF) registers[0xF] = 1;
-					else registers[0xF] = 0;
+					if (registers[(opcode & 0x0F00) >> 8] + registers[(opcode & 0x00F0) >> 4] > 0x00FF)		registers[0xF] = 1;
+					else																					registers[0xF] = 0;
 
 					registers[(opcode & 0x0F00) >> 8] += registers[(opcode & 0x00F0) >> 4];
 					pc += 2;
@@ -203,10 +207,10 @@ void chip8::cycle()
 				break;
 
 
-				case 0x5: // Vx -= Vy, VF = 1 when there is no borrow
+				case 0x0005: // Vx -= Vy, VF = 1 when there is no borrow
 				{
-					if (registers[(opcode & 0x0F00) >> 8] < registers[(opcode & 0x00F0) >> 4]) registers[0xF] = 0;
-					else registers[0xF] = 1;
+					if (registers[(opcode & 0x0F00) >> 8] < registers[(opcode & 0x00F0) >> 4])		registers[0xF] = 0;
+					else																			registers[0xF] = 1;
 
 					registers[(opcode & 0x0F00) >> 8] -= registers[(opcode & 0x00F0) >> 4];
 					pc += 2;
@@ -214,7 +218,7 @@ void chip8::cycle()
 				break;
 
 
-				case 0x6: // Vx>>=1, least significant bit is stored in VF
+				case 0x0006: // Vx>>=1, least significant bit is stored in VF
 				{
 					registers[0xF] = registers[(opcode & 0x0F00) >> 8] & 0x1;
 					registers[(opcode & 0x0F00) >> 8] >>= 0x1;
@@ -223,10 +227,10 @@ void chip8::cycle()
 				break;
 
 
-				case 0x7: // Vx=Vy-Vx, VF = 1 when there is no borrow
+				case 0x0007: // Vx=Vy-Vx, VF = 1 when there is no borrow
 				{
-					if (registers[(opcode & 0x00F0) >> 4] < registers[(opcode & 0x0F00) >> 8]) registers[0xF] = 0;
-					else registers[0xF] = 1;
+					if (registers[(opcode & 0x00F0) >> 4] < registers[(opcode & 0x0F00) >> 8])		registers[0xF] = 0;
+					else																			registers[0xF] = 1;
 
 					registers[(opcode & 0x0F00) >> 8] = registers[(opcode & 0x00F0) >> 4] - registers[(opcode & 0x0F00) >> 8];
 					pc += 2;
@@ -234,7 +238,7 @@ void chip8::cycle()
 				break;
 
 
-				case 0xE: // Vx<<=1, most significant bit is stored in VF
+				case 0x000E: // Vx<<=1, most significant bit is stored in VF
 				{
 					registers[0xF] = registers[(opcode & 0x0F00) >> 8] >> 7;
 					registers[(opcode & 0x0F00) >> 8] <<= 1;
@@ -249,7 +253,7 @@ void chip8::cycle()
 		case 0x9000: // 0x9XY0
 		{
 			// if(Vx!=Vy), skip the next instruction
-			if (registers[(opcode & 0x0F00) >> 8] != registers[(opcode & 0x00F0) >> 4]) pc += 2;
+			if (registers[(opcode & 0x0F00) >> 8] != registers[(opcode & 0x00F0) >> 4])		pc += 2;
 			pc += 2;
 		}
 		break;
@@ -315,9 +319,7 @@ void chip8::cycle()
 			switch (opcode & 0xFF) {
 				case 0x9E: // if(key()==Vx), skip instruction if key at Vx is pressed
 				{
-					if (key_state[registers[(opcode & 0x0F00) >> 8]]) {
-						pc += 2;
-					}
+					if (key_state[registers[(opcode & 0x0F00) >> 8]])		pc += 2;
 					pc += 2;
 				}
 				break;
@@ -325,9 +327,7 @@ void chip8::cycle()
 
 				case 0xA1: // if(key()!=Vx), skip instruction if key at Vx is not pressed
 				{
-					if (!key_state[registers[(opcode & 0x0F00) >> 8]]) {
-						pc += 2;
-					}
+					if (!key_state[registers[(opcode & 0x0F00) >> 8]])		pc += 2;
 					pc += 2;
 				}
 				break;
@@ -385,10 +385,9 @@ void chip8::cycle()
 
 				case 0x001E: // I +=Vx
 				{
-					if (I + registers[(opcode & 0x0F00) >> 8] > 0x0FFF)
-						registers[0xF] = 1;
-					else
-						registers[0xF] = 0;
+					if (I + registers[(opcode & 0x0F00) >> 8] > 0x0FFF)		registers[0xF] = 1;
+					else													registers[0xF] = 0;
+
 					I += registers[(opcode & 0x0F00) >> 8];
 					pc += 2;
 				}
@@ -451,7 +450,7 @@ void chip8::cycle()
 	if (sound_timer > 0) {
 		sound_timer--;
 
-		if (sound_timer == 0) {
+		if (sound_timer == 0) { //Make a sound
 			sound = 1;
 		}
 	}
@@ -479,7 +478,6 @@ int chip8::load(const char *game)
 	// Read the file into memory
 	if (size <= MEMORY_SIZE - MEMORY_OFFSET) {
 		int bytes_read = fread(&memory[0x200], 1, size, game_file);
-		printf("bytes_read: %d\n", bytes_read);
 		if (bytes_read != size)
 		{
 			printf("Failed to read file\n");
@@ -494,17 +492,6 @@ int chip8::load(const char *game)
 
 	// Close the game file
 	fclose(game_file);
-
-
-	/*
-	printf("START\n");
-	for (int i = 0x200; i < (0x200 + 2 * 100); i += 2) {
-		unsigned short op = memory[i] << 8 | memory[i + 1];
-		print_opcode(op);
-	}
-	printf("END\n");
-	*/
-
 
 	printf("Game loaded\n");
 
